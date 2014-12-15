@@ -1,0 +1,17 @@
+{
+  "uuid": "935ffe4a-afff-4dfa-aea9-db3f75610f57",
+  "shortName": "gpath-bezier",
+  "longName": "gpath-bezier",
+  "companyName": "Pebble Technology",
+  "versionCode": 1,
+  "versionLabel": "1.0",
+  "watchapp": {
+    "watchface": false
+  },
+  "appKeys": {
+    "dummy": 0
+  },
+  "resources": {
+    "media": []
+  }
+}
