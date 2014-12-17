@@ -3,6 +3,7 @@
 
 #define MAX_POINTS 256
 #define DRAW_LINE false
+#define BENCHMARK false
 #define MAX_DEMO_PATHS 3
 
 static const int rot_step = TRIG_MAX_ANGLE / 360 * 5;
@@ -89,8 +90,10 @@ static void prv_create_path() {
     gpath_destroy(s_path);
   }
 
+#if BENCHMARK
   time_t start = time(NULL);
   uint16_t start_ms = time_ms(NULL, NULL);
+#endif
 
   GPathBuilder *builder = gpath_builder_create(MAX_POINTS);
   
@@ -124,14 +127,18 @@ static void prv_create_path() {
   s_path = gpath_builder_create_path(builder);
   gpath_builder_destroy(builder);
 
+#if BENCHMARK
   time_t end = time(NULL);
   uint16_t end_ms = time_ms(NULL, NULL);
+#endif
   
   GRect bounds = layer_get_bounds(window_get_root_layer(window));
   gpath_move_to(s_path, GPoint((int16_t)(bounds.size.w/2), (int16_t)(bounds.size.h/2)));
 
-//  int total = (end - start) * 1000 + end_ms - start_ms;
-//  APP_LOG(APP_LOG_LEVEL_DEBUG, "render took %d ms (%d points)", total, current_point);
+#if BENCHMARK
+  int total = (end - start) * 1000 + end_ms - start_ms;
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "building took %d ms (%d points)", total, (int)s_path->num_points);
+#endif
 }
 
 static void window_load(Window *window) {

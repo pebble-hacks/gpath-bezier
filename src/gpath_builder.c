@@ -94,9 +94,9 @@ GPath *gpath_builder_create_path(GPathBuilder *builder) {
 
   const size_t size_of_points = num_points * sizeof(GPoint);
   GPath *result = malloc(sizeof(GPath) + size_of_points);
-  result->points = builder->points;
-  //memset(result, 0, sizeof(GPath)); //clears pointer address and results in memcpy failure
+  memset(result, 0, sizeof(GPath));
   result->num_points = num_points;
+  result->points = (GPoint*)(result + 1);
   memcpy(result->points, builder->points, size_of_points);
   return result;
 }
