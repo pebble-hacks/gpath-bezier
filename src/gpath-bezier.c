@@ -3,11 +3,15 @@
 
 #define MAX_POINTS 256
 #define DRAW_LINE false
+#define MAX_DEMO_PATHS 3
 
 static const int rot_step = TRIG_MAX_ANGLE / 360 * 5;
 static Window *window;
 static Layer *layer;
 static GPath *s_path;
+static uint8_t path_switcher = 0;
+
+static void prv_create_path(void);
 
 static void app_timer_callback(void *data) {
   if (s_path) {
@@ -34,6 +38,8 @@ static void update_layer(struct Layer *layer, GContext *ctx) {
 
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
   //text_layer_set_text(text_layer, "Select");
+  path_switcher = (path_switcher + 1) % MAX_DEMO_PATHS;
+  prv_create_path();
 }
 
 static void select_long_click_handler(ClickRecognizerRef recognizer, void *context) {
@@ -87,17 +93,42 @@ static void prv_create_path() {
   uint16_t start_ms = time_ms(NULL, NULL);
 
   GPathBuilder *builder = gpath_builder_create(MAX_POINTS);
-  gpath_builder_move_to_point(builder, GPoint(-15, -15));
-  gpath_builder_curve_to_point(builder, GPoint(15, -15), GPoint(-15, -60), GPoint(15, -60));
-  gpath_builder_curve_to_point(builder, GPoint(15, 15), GPoint(60, -15), GPoint(60, 15));
-  gpath_builder_curve_to_point(builder, GPoint(-15, 15), GPoint(15, 60), GPoint(-15, 60));
-  gpath_builder_curve_to_point(builder, GPoint(-15, -15), GPoint(-60, 15), GPoint(-60, -15));
+  
+  switch (path_switcher) {
+  case 0:
+    gpath_builder_move_to_point(builder, GPoint(-15, -15));
+    gpath_builder_curve_to_point(builder, GPoint(15, -15), GPoint(-15, -60), GPoint(15, -60));
+    gpath_builder_curve_to_point(builder, GPoint(15, 15), GPoint(60, -15), GPoint(60, 15));
+    gpath_builder_curve_to_point(builder, GPoint(-15, 15), GPoint(15, 60), GPoint(-15, 60));
+    gpath_builder_curve_to_point(builder, GPoint(-15, -15), GPoint(-60, 15), GPoint(-60, -15));
+    break;
+  case 1:
+    gpath_builder_move_to_point(builder, GPoint(-20, -50));
+    gpath_builder_curve_to_point(builder, GPoint(20, -50), GPoint(-25, -60), GPoint(25, -60));
+    gpath_builder_curve_to_point(builder, GPoint(20, 50), GPoint(0, 0), GPoint(0, 0));
+    gpath_builder_curve_to_point(builder, GPoint(-20, 50), GPoint(25, 60), GPoint(-25, 60));
+    gpath_builder_curve_to_point(builder, GPoint(-20, -50), GPoint(0, 0), GPoint(0, 0));
+    break;
+  case 2:
+    gpath_builder_move_to_point(builder, GPoint(0, -60));
+    gpath_builder_curve_to_point(builder, GPoint(60, 0), GPoint(35, -60), GPoint(60, -35));
+    gpath_builder_curve_to_point(builder, GPoint(0, 60), GPoint(60, 35), GPoint(35, 60));
+    gpath_builder_curve_to_point(builder, GPoint(0, 0), GPoint(-50, 60), GPoint(-50, 0));
+    gpath_builder_curve_to_point(builder, GPoint(0, -60), GPoint(50, 0), GPoint(50, -60));
+    break;
+  default:
+    APP_LOG(APP_LOG_LEVEL_ERROR, "Invalid demo path id: %d", path_switcher);
+  }
+
 
   s_path = gpath_builder_create_path(builder);
   gpath_builder_destroy(builder);
 
   time_t end = time(NULL);
   uint16_t end_ms = time_ms(NULL, NULL);
+  
+  GRect bounds = layer_get_bounds(window_get_root_layer(window));
+  gpath_move_to(s_path, GPoint((int16_t)(bounds.size.w/2), (int16_t)(bounds.size.h/2)));
 
 //  int total = (end - start) * 1000 + end_ms - start_ms;
 //  APP_LOG(APP_LOG_LEVEL_DEBUG, "render took %d ms (%d points)", total, current_point);
@@ -121,8 +152,6 @@ static void window_load(Window *window) {
   */
   
   prv_create_path();
-  
-  gpath_move_to(s_path, GPoint((int16_t)(bounds.size.w/2), (int16_t)(bounds.size.h/2)));
   
   app_timer_register(250, app_timer_callback, NULL);
 }
