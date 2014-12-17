@@ -15,7 +15,7 @@ static void app_timer_callback(void *data) {
     layer_mark_dirty(layer);
   }
   
-  app_timer_register(40, app_timer_callback, NULL);
+  app_timer_register(35, app_timer_callback, NULL);
 }
 
 static void update_layer(struct Layer *layer, GContext *ctx) {
@@ -94,7 +94,7 @@ static void prv_create_path() {
   gpath_builder_curve_to_point(builder, GPoint(-15, -15), GPoint(-60, 15), GPoint(-60, -15));
 
   s_path = gpath_builder_create_path(builder);
-  //gpath_builder_destroy(builder);
+  gpath_builder_destroy(builder);
 
   time_t end = time(NULL);
   uint16_t end_ms = time_ms(NULL, NULL);
@@ -128,7 +128,8 @@ static void window_load(Window *window) {
 }
 
 static void window_unload(Window *window) {
-  //nothing here yet
+  gpath_destroy(s_path);
+  layer_destroy(layer);
 }
 
 static void init(void) {
