@@ -11,29 +11,29 @@ bool recursive_bezier_fixed(GPathBuilder *builder,
                             int32_t x3, int32_t y3,
                             int32_t x4, int32_t y4){
 
-
-
   // Calculate all the mid-points of the line segments
-  int x12   = (x1 + x2) / 2;
-  int y12   = (y1 + y2) / 2;
-  int x23   = (x2 + x3) / 2;
-  int y23   = (y2 + y3) / 2;
-  int x34   = (x3 + x4) / 2;
-  int y34   = (y3 + y4) / 2;
-  int x123  = (x12 + x23) / 2;
-  int y123  = (y12 + y23) / 2;
-  int x234  = (x23 + x34) / 2;
-  int y234  = (y23 + y34) / 2;
-  int x1234 = (x123 + x234) / 2;
-  int y1234 = (y123 + y234) / 2;
+  int32_t x12   = (x1 + x2) / 2;
+  int32_t y12   = (y1 + y2) / 2;
+  int32_t x23   = (x2 + x3) / 2;
+  int32_t y23   = (y2 + y3) / 2;
+  int32_t x34   = (x3 + x4) / 2;
+  int32_t y34   = (y3 + y4) / 2;
+  int32_t x123  = (x12 + x23) / 2;
+  int32_t y123  = (y12 + y23) / 2;
+  int32_t x234  = (x23 + x34) / 2;
+  int32_t y234  = (y23 + y34) / 2;
+  int32_t x1234 = (x123 + x234) / 2;
+  int32_t y1234 = (y123 + y234) / 2;
 
   // Angle Condition
   int32_t a23 = atan2_lookup((int16_t)((y3 - y2) / fixedpoint_base), (int16_t)((x3 - x2) / fixedpoint_base));
   int32_t da1 = abs(a23 - atan2_lookup((int16_t)((y2 - y1) / fixedpoint_base), (int16_t)((x2 - x1) / fixedpoint_base)));
   int32_t da2 = abs(atan2_lookup((int16_t)((y4 - y3) / fixedpoint_base), (int16_t)((x4 - x3) / fixedpoint_base)) - a23);
+  
   if (da1 >= TRIG_MAX_ANGLE) {
     da1 = TRIG_MAX_ANGLE - da1;
   }
+  
   if (da2 >= TRIG_MAX_ANGLE) {
     da2 = TRIG_MAX_ANGLE - da2;
   }
@@ -48,6 +48,7 @@ bool recursive_bezier_fixed(GPathBuilder *builder,
       && recursive_bezier_fixed(builder, x1234, y1234, x234, y234, x34, y34, x4, y4)) {
     return true;
   }
+  
   return false;
 }
 

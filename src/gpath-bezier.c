@@ -4,13 +4,16 @@
 #define MAX_POINTS 256
 #define DRAW_LINE false
 #define BENCHMARK false
-#define MAX_DEMO_PATHS 3
+#define MAX_DEMO_PATHS 4
 
 static const int rot_step = TRIG_MAX_ANGLE / 360 * 5;
 static Window *window;
 static Layer *layer;
 static GPath *s_path;
 static uint8_t path_switcher = 0;
+static bool draw_line_switcher = false;
+static GColor foreground_color;
+static GColor background_color;
 
 static void prv_create_path(void);
 
@@ -24,65 +27,48 @@ static void app_timer_callback(void *data) {
 }
 
 static void update_layer(struct Layer *layer, GContext *ctx) {
-  //APP_LOG(APP_LOG_LEVEL_DEBUG, "starting render");
+  graphics_context_set_stroke_color(ctx, foreground_color);
+  graphics_context_set_fill_color(ctx, foreground_color);
 
-  graphics_context_set_stroke_color(ctx, GColorWhite);
-  graphics_context_set_fill_color(ctx, GColorWhite);
-  
-  //drawing actual bezier curves
-#if DRAW_LINE
-  gpath_draw_outline(ctx, s_path);
-#else
-  gpath_draw_filled(ctx, s_path);
-#endif
+  if (draw_line_switcher) {
+    gpath_draw_outline(ctx, s_path);
+  } else {
+    gpath_draw_filled(ctx, s_path);
+  }
+}
+
+static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
+  //text_layer_set_text(text_layer, "Up");
+  draw_line_switcher = !draw_line_switcher;
+  layer_mark_dirty(layer);
 }
 
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
   //text_layer_set_text(text_layer, "Select");
   path_switcher = (path_switcher + 1) % MAX_DEMO_PATHS;
   prv_create_path();
-}
-
-static void select_long_click_handler(ClickRecognizerRef recognizer, void *context) {
-  //text_layer_set_text(text_layer, "Select held");
-}
-
-static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
-  //text_layer_set_text(text_layer, "Up");
+  layer_mark_dirty(layer);
 }
 
 static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
   //text_layer_set_text(text_layer, "Down");
-}
-
-static void up_long_click_handler(ClickRecognizerRef recognizer, void *context) {
-  //text_layer_set_text(text_layer, "Up held");
-}
-
-static void up_long_released_handler(ClickRecognizerRef recognizer, void *context) {
-  //text_layer_set_text(text_layer, "Up released");
-}
-
-static void down_long_click_handler(ClickRecognizerRef recognizer, void *context) {
-  //text_layer_set_text(text_layer, "Down held");
-}
-
-static void down_long_released_handler(ClickRecognizerRef recognizer, void *context) {
-  //text_layer_set_text(text_layer, "Down released");
-}
-
-static void back_click_handler(ClickRecognizerRef recognizer, void *context) {
-  //text_layer_set_text(text_layer, "Back");
+  if (background_color == GColorBlack) {
+    background_color = GColorWhite;
+    foreground_color = GColorBlack;
+  } else {
+    background_color = GColorBlack;
+    foreground_color = GColorWhite;
+  }
+  
+  Layer *window_layer = window_get_root_layer(window);
+  window_set_background_color(window, background_color);
+  layer_mark_dirty(layer);
 }
 
 static void click_config_provider(void *context) {
-  window_single_click_subscribe(BUTTON_ID_SELECT, select_click_handler);
   window_single_click_subscribe(BUTTON_ID_UP, up_click_handler);
+  window_single_click_subscribe(BUTTON_ID_SELECT, select_click_handler);
   window_single_click_subscribe(BUTTON_ID_DOWN, down_click_handler);
-  //window_single_click_subscribe(BUTTON_ID_BACK, back_click_handler);
-  window_long_click_subscribe(BUTTON_ID_SELECT, 500, select_long_click_handler, NULL);
-  window_long_click_subscribe(BUTTON_ID_UP, 250, up_long_click_handler, up_long_released_handler);
-  window_long_click_subscribe(BUTTON_ID_DOWN, 250, down_long_click_handler, down_long_released_handler);
 }
 
 static void prv_create_path() {
@@ -119,6 +105,13 @@ static void prv_create_path() {
     gpath_builder_curve_to_point(builder, GPoint(0, 0), GPoint(-50, 60), GPoint(-50, 0));
     gpath_builder_curve_to_point(builder, GPoint(0, -60), GPoint(50, 0), GPoint(50, -60));
     break;
+  case 3:
+    gpath_builder_move_to_point(builder, GPoint(0, -60));
+    gpath_builder_curve_to_point(builder, GPoint(60, 0), GPoint(35, -60), GPoint(60, -35));
+    gpath_builder_line_to_point(builder, GPoint(-60, 0));
+    gpath_builder_curve_to_point(builder, GPoint(0, 60), GPoint(-60, 35), GPoint(-35, 60));
+    gpath_builder_line_to_point(builder, GPoint(0, -60));
+    break;
   default:
     APP_LOG(APP_LOG_LEVEL_ERROR, "Invalid demo path id: %d", path_switcher);
   }
@@ -142,25 +135,20 @@ static void prv_create_path() {
 }
 
 static void window_load(Window *window) {
+  foreground_color = GColorWhite;
+  background_color = GColorBlack;
+  
   Layer *window_layer = window_get_root_layer(window);
-  window_set_background_color(window, GColorBlack);
+  window_set_background_color(window, background_color);
   GRect bounds = layer_get_bounds(window_layer);
 
   layer = layer_create(bounds);
   layer_set_update_proc(layer, update_layer);
   layer_add_child(window_layer, layer);
   
-  /*
-  srand(time(NULL));
-  
-  for (int i=0; i<NUMBER_OF_POINTS; i++) {
-    points[i] = GPoint(rand() % bounds.size.w, rand() % (bounds.size.h - 30));
-  }
-  */
-  
   prv_create_path();
   
-  app_timer_register(250, app_timer_callback, NULL);
+  app_timer_callback(NULL);
 }
 
 static void window_unload(Window *window) {
