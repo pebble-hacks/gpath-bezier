@@ -3,6 +3,7 @@
 
 const int fixedpoint_base = 16;
 
+// Angle below which we're not going to process with recursion
 int32_t max_angle_tolerance = (TRIG_MAX_ANGLE / 360) * 10;
 
 bool recursive_bezier_fixed(GPathBuilder *builder,
@@ -73,8 +74,15 @@ bool bezier_fixed(GPathBuilder *builder, GPoint p1, GPoint p2, GPoint p3, GPoint
 }
 
 GPathBuilder *gpath_builder_create(uint32_t max_points) {
+  // Allocate enough memory to store all the points - points are stored contiguously with the
+  // GPathBuilder structure
   const size_t required_size = sizeof(GPathBuilder) + max_points * sizeof(GPoint);
   GPathBuilder *result = malloc(required_size);
+
+  if (!result) {
+    return NULL;
+  }
+
   memset(result, 0, required_size);
   result->max_points = max_points;
   return result;
@@ -85,12 +93,11 @@ void gpath_builder_destroy(GPathBuilder *builder) {
 }
 
 GPath *gpath_builder_create_path(GPathBuilder *builder) {
-  // TODO: make this using the official SDK setters
-  if (builder->next_point_index <= 1) {
+  if (builder->num_points <= 1) {
     return NULL;
   }
 
-  size_t num_points = builder->next_point_index;
+  uint32_t num_points = builder->num_points;
 
   // handle case where last point == first point => remove last point
   while (num_points > 1
@@ -98,17 +105,26 @@ GPath *gpath_builder_create_path(GPathBuilder *builder) {
     num_points--;
   }
 
+  // Allocate enough memory for both the GPath structure as well as the array of GPoints.
+  // Both will be contiguous in memory.
   const size_t size_of_points = num_points * sizeof(GPoint);
   GPath *result = malloc(sizeof(GPath) + size_of_points);
+
+  if (!result) {
+    return NULL;
+  }
+
   memset(result, 0, sizeof(GPath));
   result->num_points = num_points;
+  // Set the points pointer within the GPath structure to point just after the GPath structure
+  // since that is where memory has been allocated for the array.
   result->points = (GPoint*)(result + 1);
   memcpy(result->points, builder->points, size_of_points);
   return result;
 }
 
 bool gpath_builder_move_to_point(GPathBuilder *builder, GPoint to_point) {
-  if (builder->next_point_index != 0) {
+  if (builder->num_points != 0) {
     return false;
   }
 
@@ -116,16 +132,16 @@ bool gpath_builder_move_to_point(GPathBuilder *builder, GPoint to_point) {
 }
 
 bool gpath_builder_line_to_point(GPathBuilder *builder, GPoint to_point) {
-  if (builder->next_point_index >= builder->max_points - 1) {
+  if (builder->num_points >= builder->max_points - 1) {
     return false;
   }
 
-  builder->points[builder->next_point_index++] = to_point;
+  builder->points[builder->num_points++] = to_point;
   return true;
 }
 
 bool gpath_builder_curve_to_point(GPathBuilder *builder, GPoint to_point,
                                   GPoint control_point_1, GPoint control_point_2) {
-  GPoint from_point = builder->points[builder->next_point_index-1];
+  GPoint from_point = builder->points[builder->num_points-1];
   return bezier_fixed(builder, from_point, control_point_1, control_point_2, to_point);
 }
