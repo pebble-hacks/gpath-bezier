@@ -12,8 +12,13 @@ static Layer *layer;
 static GPath *s_path;
 static uint8_t path_switcher = 0;
 static bool draw_line_switcher = false;
+#ifdef PBL_COLOR
+static GColor8 foreground_color;
+static GColor8 background_color;
+#else
 static GColor foreground_color;
 static GColor background_color;
+#endif
 
 static void prv_create_path(void);
 
@@ -52,7 +57,11 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
 
 static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
   //text_layer_set_text(text_layer, "Down");
+#ifdef PBL_COLOR
+  if (GColorEq(background_color, GColorBlack)) {
+#else
   if (background_color == GColorBlack) {
+#endif
     background_color = GColorWhite;
     foreground_color = GColorBlack;
   } else {
