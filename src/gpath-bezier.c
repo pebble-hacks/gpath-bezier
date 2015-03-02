@@ -6,14 +6,23 @@
 #define BENCHMARK false
 #define MAX_DEMO_PATHS 4
 
+#ifndef PBL_PLATFORM_BASALT
+#define GColorEq(c1,c2) ((c1)==(c2))
+#endif
+
 static const int rot_step = TRIG_MAX_ANGLE / 360 * 5;
 static Window *window;
 static Layer *layer;
 static GPath *s_path;
 static uint8_t path_switcher = 0;
 static bool draw_line_switcher = false;
+#ifdef PBL_COLOR
+static GColor8 foreground_color;
+static GColor8 background_color;
+#else
 static GColor foreground_color;
 static GColor background_color;
+#endif
 
 static void prv_create_path(void);
 
@@ -52,7 +61,7 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
 
 static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
   //text_layer_set_text(text_layer, "Down");
-  if (background_color == GColorBlack) {
+  if (GColorEq(background_color, GColorBlack)) {
     background_color = GColorWhite;
     foreground_color = GColorBlack;
   } else {
